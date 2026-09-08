@@ -1,0 +1,26 @@
+# Public repository is opt-in. Add each reviewed project file explicitly.
+/*
+!/.gitignore
+!/README.md
+!/docs/
+/docs/*
+!/docs/architecture.md
+!/docs/demo.md
+!/docs/datasets.md
+!/docs/sources.md
+!/tools/
+/tools/*
+!/tools/generate_dataset.py
+
+# Private research, downloaded sources, credentials and measured results stay local.
+.local/
+data/
+results/
+.env
+.env.*
+*.key
+*.pem
+*.p12
+*.pfx
+*.pcap
+*.pcapng
