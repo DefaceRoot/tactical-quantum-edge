@@ -1,67 +1,68 @@
 # Demonstration procedure
 
-This procedure targets two IEGs and one cellular puck. It has not yet been exercised on hardware. Run the actual mission applications; do not replace them with a dashboard that only simulates success.
+Updated September 9, 2026. The WILDTRACK SMB transfer recording is complete according to the team. It used a different setup and is separate from the live procedure below. No live failover, delivery or PQ measurements are claimed yet.
 
-## Before the run
+## Before the live run
 
-1. Connect separate client networks behind IEG A and IEG B. Establish two usable transport paths for A and a working path for B. Record actual media and upstream dependencies.
-2. Confirm the service VM, TAK client/server, shared-folder application and chosen video product are available. Record versions. Identify the exact Rally Point product, codecs and ingest/playback protocol; do not assume RTSP or KLV support from its name.
-3. Verify peer identity, CISEN algorithm and security-policy configuration using authorized operator access. Confirm fresh PQ rekeying is coupled to interruption recovery and traffic release.
-4. Verify both underlays independently reach the overlay service. Check captive portals, UDP restrictions, carrier-grade NAT, MTU, DNS and IPv6. A working venue Wi-Fi connection is not proof that its upstream is independent of venue Ethernet.
-5. Generate the [synthetic dataset](datasets.md). Keep input hashes fixed. Rebase CoT timestamps at replay time; do not change the archived input package.
-6. Establish sender/receiver logging with a shared run ID. Use a single monotonic clock for local duration measurements. For one-way delay across hosts, synchronize clocks and report the measured clock error. Preserve sender and receiver evidence separately.
-7. Check app traffic cannot leave unprotected through either WAN, including IPv6 and DNS paths. Test this only on the team's equipment and authorized network.
+1. Obtain organizer instructions for the selected MITRE CoT dataset. The catalog describes a MARFORPAC XML/UDP stream to an external IPv4 address, but supplies no feed endpoint, port, approved replay files or Data Sharing Agreement. The linked MITRE PDF is a router guide. Do not replace the required dataset with generated events without renewed explicit approval.
+2. Confirm delivery, authorization and handling terms. Establish whether the input is live or an approved recording, how it reaches the Linux source laptop, and which CoT fields identify individual events. Do not assume the feed contains moving tracks. A live feed's delayed events must retain their real timestamps. Rebase timestamps only for an authorized recorded replay and label that transformation.
+3. Preserve the existing TAK Server VM, virtual IEG and CISEN path. WinTAK is reported running; use its existing map. Confirm authorized ingress and client compatibility without changing production services. No replay sender or additional receiver-status code has been built yet.
+4. Inspect the Windows sharing PC's adapters and A's port membership read-only. Obtain approval for exact sharing and secondary-WAN changes, their impact and rollback. The sharing connection must not join an existing production LAN. PC sharing and dual WAN are not configured or tested.
+5. Keep the Linux source on A's LAN. A's primary WAN uses puck A; its isolated secondary WAN uses Ethernet from the separate PC sharing phone or public Wi-Fi. B stays on puck B with WinTAK on its LAN. Verify the secondary upstream is independent of A's primary, and check captive portals, NAT, UDP restrictions and MTU. Two different uplinks on separate IEGs alone are not failover.
+6. Confirm non-secret evidence for the actual PQ algorithm, authenticated peer and installed session. Plan to show either continuity of a valid PQ-established session or a fresh authenticated exchange. A fresh exchange on every switch is not required. Check that mission traffic has no unprotected bypass; preserve existing security rules.
+7. Establish independent sender and receiver observations with a shared run ID. Use monotonic clocks for local intervals. For cross-host delay or event age, establish clock synchronization and report uncertainty. A sender log proves attempted transmission, not receipt.
+8. Confirm that interrupting A's primary WAN cannot affect other users. Obtain exact change approval before the run. Do not reset or reboot equipment, change VM power or vSwitches, disable firewalls or install unapproved drivers.
 
-## The visible run
+## Visible run
 
 | Stage | Operator action | Judge-visible evidence |
 |---|---|---|
-| Baseline | Send numbered messages in both directions, publish static/mobile CoT, play video, start a file transfer | Increasing received sequences, current tracks, decoded moving frames and file progress |
-| Break | Physically remove A's primary uplink; retain power and LAN | Named primary path down and interruption timestamp |
-| Recover | Allow existing transport policy and CISEN recovery to run | Alternate transport selected, fresh authenticated PQ epoch confirmed, protected payload delivery resumes |
-| Verify | Complete the file and reconcile message logs | Correct SHA-256, unique delivery/loss counts, track age and video interruption duration |
-| Restore | Reconnect the primary path and observe the configured policy | Stable fallback or deliberate failback; no oscillation or manual app-address changes |
+| Baseline | Deliver the authorized MITRE input through A, CISEN, the existing TAK service and B to WinTAK | Actual received updates, event age/expiry, WinTAK tracks and selected transport |
+| Break | Disconnect only A's approved primary uplink, retaining LAN and power | Primary path down and interruption timestamp |
+| Recover | Let the approved transport policy use A's secondary WAN | Alternate egress, valid protected session evidence and newly received application data |
+| Verify | Reconcile observations from both ends | Recovery interval, delivery counts where matchable, freshness and any observed loss |
+| Restore | Reconnect the primary and observe existing policy | Stable operation without manual application-address changes; record whether failback occurs |
 
-Use a source frame counter or timestamp for live video. A local prerecorded loop can hide an upstream freeze unless the receiver also shows stream freshness. A video playing from local cache does not count as recovered network delivery.
+Use WinTAK's existing map rather than build a custom map. Keep an independent receiver record visible if possible. An optional laptop-only status display would need real receiver observations, not sender counters or simulated success. Do not add a new server UI for the demo.
 
-Keep bulk transfer pressure below the point where it starves the track stream. Measure the actual puck capacity first. Rate-limiting a transfer for repeatability is acceptable if disclosed. Do not promise zero packet loss or a recovery threshold before measuring it.
+A stationary track can be current. A moving or persistent icon can be cached. Show the last receiver arrival, original event time and `stale` expiry so judges can distinguish them. Never make delayed live events look fresh by rewriting their timestamps.
+
+Present the WILDTRACK recording as the team's completed recorded transfer demo. Do not imply that it tests this live wiring or proves zero loss, measured recovery, throughput or PQ protection. A matching file hash, if actually measured at both ends, proves file integrity against that reference, not the transport's cryptographic algorithm.
 
 ## Measurements
 
-Save raw observations under `results/<run-id>/`, separate from `data/`. Keep real addresses, captures and raw key-establishment logs private. Publish only a reviewed summary after measurement.
+Keep raw observations under `results/<run-id>/`, separate from dataset inputs and outside Git. Keep real addresses, operational captures and raw security logs private. Publish only a reviewed summary of measurements actually taken.
 
 | Metric | Definition |
 |---|---|
-| Initial protected connection time | Initiation to confirmed secure readiness |
-| Loss detection time | Link interruption to declared path failure |
-| Underlay switch time | Declared failure to usable alternate egress |
-| PQ establishment time | Start to authenticated completion of the new exchange |
-| Protected recovery time | Link interruption to first successfully received mission payload under the confirmed new epoch |
-| Unique delivery | Unique received message IDs divided by all attempted message IDs |
-| Loss, duplicates, reordering | Reconcile IDs at both ends; report receive cutoff and late arrivals separately |
-| Goodput | Unique application payload bytes received divided by the stated measurement interval |
-| Track freshness | Receiver time minus source event time, with clock uncertainty |
-| Video freeze | Last decoded pre-break frame to first fresh post-break frame |
-| File integrity | Received file size and SHA-256 equal the trusted input manifest |
-| Operator effort | Actions and elapsed setup/recovery time; distinguish automatic from manual recovery |
+| Initial protected connection time | Initiation to confirmed protected readiness; a pre-existing session has no new setup measurement unless setup is actually observed |
+| Failure detection time | Primary interruption to declared path failure |
+| Underlay switch time | Declared failure to usable secondary egress |
+| Application recovery time | Interruption to first new mission payload received through the confirmed protected path |
+| Session outcome | State whether the existing session continued, a connection recovered automatically, or an operator restarted it |
+| PQ exchange time, if observed | Exchange start to authenticated completion and confirmed key installation |
+| Unique delivery and loss | Match eligible sent events to received events by stable event identifiers, using a stated receive cutoff and reporting late arrivals |
+| Duplicates and reordering | Compare matchable event identities and ordering at both ends |
+| Goodput | Unique application payload bytes received divided by the stated interval |
+| Track freshness | Receiver time minus original event time, with clock uncertainty and expiry status |
+| Operator effort | Setup and recovery actions, elapsed time and required infrastructure |
 
-Report baseline, outage and recovered intervals separately. Include failed trials. After rehearsals, report median and worst observed recovery across at least five repeat runs if time permits. Five is a proposed rehearsal count, not statistical qualification.
+A CoT track UID identifies a track, not necessarily each update. Establish an event-level matching method from the authorized data before calculating loss. Sender counts alone are insufficient. If no reliable event matching is available, report observed arrivals and gaps, not an end-to-end loss percentage. Count receiver-side application bytes without duplicates where possible and disclose the counting method.
 
-## Negative and boundary checks
+Report baseline, outage and recovered intervals separately. CoT delivery rate and goodput describe the offered workload, not the capacity of the uplink or CISEN. Record dependencies and failed trials. If multiple rehearsals are approved, report the number of runs and observed range rather than promise a threshold before measurement.
 
-- Disable the alternate path as well. Show honest disconnected status; do not label it continuous connectivity.
-- In an isolated authorized run, prevent the new PQ exchange. The system must not release mission payload over an unprotected or classical-only fallback.
-- Restore the primary path repeatedly. Check hysteresis and policy stability.
-- Deliver delayed CoT events. Verify expired observations are not presented as current tracks.
-- Inspect egress during transition. An absence of readable plaintext in a capture alone is not proof of the negotiated algorithm.
+## Boundary checks
 
-## Pitch plan
+Perform disruptive checks only in an isolated, explicitly approved setup.
 
-Prepare a three-minute version and a longer operator walkthrough. Three minutes is a rehearsal choice; confirm the Washington DC stage limit with organizers.
+- If both uplinks are unavailable, show disconnected status rather than continuous connectivity.
+- Check that recovery never sends mission data through an unprotected fallback. Do not invalidate a working protected session merely to force a new exchange.
+- Observe primary restoration for unstable switching. Report actual policy behavior.
+- Check how expired or delayed CoT appears at the receiver. A retained icon must not be described as a fresh update.
+- Correlate transport, security state and receiver delivery. An encrypted-looking packet capture alone does not establish the algorithm.
 
-1. Explain the operator problem in one sentence. "The team must keep its mission applications usable when an available transport disappears, without silently weakening connection security."
-2. Show traffic before explaining cryptography. Pull the primary link while the judges watch.
-3. Show the recovered transport, confirmed new PQ epoch and received application data on the same timeline.
-4. Finish with measured recovery, intact files, unchanged application destinations, limitations and the next pilot test.
+## Presentation
 
-Distinguish pre-existing CISEN capabilities from work completed during the hackathon. Do not claim the PQ protocol itself is a new invention. The project contribution is the tactical integration and measured recovery evidence.
+Show the completed WILDTRACK recording separately, then explain the planned live path and its dependencies. If authorized MITRE access is available, show real traffic, interrupt the approved uplink and present the recovery timeline. If access is still missing, state that blocker; do not quietly substitute synthetic input.
+
+Finish with only measured results, unchanged application destinations and remaining limits. Distinguish pre-existing CISEN capabilities from hackathon integration work. Prepare a short version, but confirm the stage time with organizers rather than treat a rehearsal length as an event rule.
