@@ -1,6 +1,10 @@
 # Public repository is opt-in. Add each reviewed project file explicitly.
 /*
 !/.gitignore
+!/.gitattributes
+!/demo/
+/demo/*
+!/demo/SMB_Transfer_WAN_Failover.mp4
 !/README.md
 !/docs/
 /docs/*
