@@ -1,33 +1,33 @@
 # Tactical Quantum Edge (TQE)
 
-Team CIS's project for the 2026 NDIA Global Defense Hackathon. Alex is team lead. This GitHub repository is the judge submission repository.
+Team CIS's project for the 2026 NDIA Global Defense Hackathon.
 
 Keep unchanged mission applications usable when a transport fails, without weakening the protected connection.
 
 ## The demonstration
 
-The team completed its WILDTRACK SMB file-transfer video recording using a different setup from the planned live demo. Throughput, loss, recovery and post-quantum security measurements have not been independently verified or published here.
+The team completed its [WILDTRACK SMB file-transfer recording](demo/SMB_Transfer_WAN_Failover.mp4) using a different setup from the live demo. Throughput, loss, recovery and post-quantum security measurements have not been independently verified or published here.
 
-The live demo will use the actual NDIA-selected MITRE Cursor-on-Target data through the existing TAK Server and WinTAK. The planned application path is:
+The presentation now uses explicitly approved synthetic CoT through the existing TAK Server and WinTAK. These are fictional events, not the MITRE/MARFORPAC feed. The application path is:
 
 ```text
-Linux source -> IEG A -> CISEN -> existing virtual IEG / TAK Server
-TAK Server -> CISEN -> IEG B -> WinTAK
+Windows sender -> source IEG -> CISEN -> existing virtual IEG / TAK Server
+TAK Server -> existing protected receiver connection -> WinTAK
 ```
 
-IEG A will use its cellular puck as the primary WAN. A separate Windows PC will share phone or public Wi-Fi over Ethernet to an isolated secondary WAN port on A. The source laptop stays on A's LAN, not on the sharing PC. IEG B stays on its own cellular puck. Two different uplinks on two different IEGs alone do not demonstrate failover; A needs both uplinks available at once.
+The compact kit uses one Windows PC as both the CoT sender and a Wi-Fi-to-Ethernet sharing host. One Ethernet adapter connects to the source IEG's LAN. A second adapter supplies an isolated backup WAN from independent phone Wi-Fi. Windows routing and firewall rules block direct mission-subnet access over Wi-Fi or the sharing adapter. The Linux laptop is for management only. The receiver keeps its original connection.
 
-This is a proposed configuration. PC sharing and dual-WAN failover are not configured or tested. Preserve the existing ESXi, TAK, IEG and CISEN configuration. Any operational change requires prior approval with its exact impact and rollback.
+Windows sharing and the isolated backup WAN are configured. During an approved primary-cable interruption, the source IEG selected the backup while retaining the protected mission route. CoT receipts continued at about one update per second, and the operator confirmed WinTAK tracks continued. Reconnecting the cable returned selection to the primary. No zero-loss or precise recovery-time claim is made. This is cable-pull behavior, not Internet-outage detection.
 
 ## Current status
 
 Updated September 9, 2026.
 
-Both MITRE Cursor on Target Standard and WILDTRACK are selected in the authenticated event catalog. The MITRE entry describes a MARFORPAC XML/UDP feed to an external IPv4 address, refers to a Data Sharing Agreement and links only a router user guide. No feed endpoint, port, approved replay files or agreement has been supplied. Organizer delivery and handling instructions are the live-demo blocker.
+Both MITRE Cursor on Target Standard and WILDTRACK are selected in the event catalog. The MITRE entry describes a MARFORPAC XML/UDP feed, refers to a Data Sharing Agreement and links only a router guide. No feed endpoint, port, approved replay files or agreement has been supplied. That blocks use of the actual MITRE data, not the newly approved synthetic presentation.
 
-WinTAK is reported running. Use its existing map; no new server UI is planned. Live delivery, receiver freshness, failover and the deployed post-quantum key establishment still need evidence. No new replay or receiver code has been built. A valid PQ-established session may remain protected across a WAN switch; a fresh authenticated PQ exchange is an optional stronger demonstration, not a requirement on every switch.
+The Windows-native [CoT tool and demo controls](docs/demo.md#windows-cot-tool) provide mTLS probing, recorded replay, UDP relay and independent receiver logs. A Windows mTLS probe succeeded with an authorized client and supplied CA. Synthetic CoT receipts and operator-confirmed WinTAK continuity were observed during the cable-pull run. Precise recovery, loss and deployed post-quantum key-establishment evidence remain pending. A valid PQ-established session may remain protected across a WAN switch; a fresh authenticated PQ exchange is optional stronger evidence.
 
-This repository contains the project docs and an original synthetic dataset generator. The generator is a separate fixture, not the selected MITRE dataset or an approved substitute. It does not send traffic, replay CoT, establish a VPN or implement failover. This repository does not contain CISEN's proprietary implementation or deployment credentials.
+The Windows tools use PowerShell 5.1 and .NET Framework 4.8, with no Python or external dependencies. The original synthetic generator still requires Python. Its fictional output is approved for this presentation but is not the selected MITRE dataset. The tools do not implement CISEN cryptography or gateway failover. This repository contains no CISEN proprietary implementation or deployment credentials.
 
 ## Start here
 
@@ -38,6 +38,6 @@ This repository contains the project docs and an original synthetic dataset gene
 
 ## Public boundary
 
-Only reviewed project-core files are tracked. Research notes, account details, source downloads, generated datasets, run logs, captures and operational configuration stay out of Git. Do not force-add them.
+Only reviewed project-core files and the team's approved recording are public. Research notes, account details, source downloads, generated datasets, run logs, captures and operational configuration stay out of Git. Do not force-add them.
 
-GitHub remains the submission location; do not create a GitLab project. The participant terms' GitLab wording remains an organizer clarification, not permission to move the project. The project contribution license and required licensing disclosure need owner approval before final submission. No new license is granted here for CISEN or third-party material. Public access to a repository or dataset link does not grant redistribution rights.
+The project stays on GitHub; do not create a GitLab project. The participant terms' GitLab wording remains an organizer clarification, not permission to move the project. Contribution licensing and the required licensing disclosure need owner approval. No new license is granted here for CISEN or third-party material. Public access to a repository or dataset link does not grant redistribution rights.

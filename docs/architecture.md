@@ -1,26 +1,27 @@
 # Architecture
 
-Updated September 9, 2026. The live wiring below is proposed, not a completed failover test.
+Updated September 9, 2026. The approved synthetic-CoT run exercised primary-cable failover. The backup was selected, CoT receipts continued at about 1 Hz, and the operator confirmed continuing WinTAK tracks. Precise recovery and loss are not established.
 
 ## Live path
 
 ```text
-Linux source on A's LAN
-  -> physical IEG A
-       primary WAN: cellular puck A
-       secondary WAN: isolated Ethernet from Windows Wi-Fi-sharing PC
+Windows PC, source Ethernet adapter -> source IEG LAN
+  -> source IEG
+       primary WAN: cellular puck
+       backup WAN: isolated Ethernet from the same PC's sharing adapter
+                   <- Windows ICS <- independent phone Wi-Fi
   -> existing CISEN network
   -> existing virtual IEG -> existing TAK Server VM on ESXi
-  -> existing CISEN network
-  -> physical IEG B -> Windows receiver running WinTAK
-       WAN: separate cellular puck B
+  -> existing protected receiver connection -> WinTAK
+
+Linux laptop: management only
 ```
 
-The sharing PC supplies only A's secondary uplink. It is not the mission source. Keeping the source behind A prevents its traffic from bypassing the gateway under test. A needs two simultaneous uplinks; putting a different uplink on B does not provide failover for A. The secondary Wi-Fi upstream must be independent of puck A. Ethernet and Wi-Fi from the same puck share its failure domain.
+The Windows PC has two Ethernet adapters with separate roles. Its source adapter reaches the mission subnet through the IEG LAN. Its sharing adapter supplies only the isolated backup WAN. Windows routing and firewall rules block direct mission-subnet traffic over Wi-Fi and the sharing adapter; forced direct TCP probes timed out while the normal gateway path reached the TAK port. That establishes the checked network prerequisite, not TLS authentication or CoT delivery.
 
-The RB5009 has no integrated Wi-Fi. A PC sharing phone or public Wi-Fi avoids installing a radio or driver on the IEG. PC sharing and A's secondary WAN are not configured or tested. Inspect PC adapters and gateway port membership first. Never connect a sharing interface to an existing production LAN: its DHCP and address changes could disrupt other users. Repurposing a LAN port as WAN requires explicit approval.
+The RB5009 has no integrated Wi-Fi. Windows Internet Connection Sharing supplies the backup without a new IEG radio or driver. Sharing is enabled and the isolated WAN has a DHCP lease. The Wi-Fi upstream must remain independent of the primary puck. Two connectors on the same puck do not provide independent backhauls.
 
-Keep B and the existing TAK service reachable while interrupting only A's primary uplink. Preserve ESXi, TAK, all IEG configuration and the existing CISEN network. Start read-only, confirm the interruption will not affect other users, and obtain approval for each exact operational change with its impact and rollback. No resets, reboots, VM power changes, vSwitch changes, firewall disabling or unapproved drivers.
+The receiver remains on its original connection; no receiving-network move is claimed. The original virtual-IEG WAN is restored. Preserve TAK, ESXi and the other physical IEG. Only explicitly approved source-gateway changes and interruptions are in scope.
 
 ## Responsibilities
 
@@ -31,7 +32,7 @@ Keep B and the existing TAK service reachable while interrupting only A's primar
 | Overlay routing | Keep authorized mission destinations reachable through CISEN | Authorized path and stable application destinations before and after the switch |
 | Mission application | Continue or recover without endpoint reconfiguration | Independently received CoT updates and real WinTAK behavior |
 
-Inspect the existing transport policy before choosing any changes. Do not assume an installed or missing package proves how a custom IEG handles failover. Reuse compatible existing mechanisms rather than install a competing manager. OpenWrt's mwan3 documentation distinguishes version-specific implementations and warns about compatibility. Multi-WAN failover is not channel bonding. [S5](sources.md#s5-transport-management)
+The source gateway uses primary and backup host routes to the existing CISEN endpoint, with metrics 10 and 20. The primary WAN default metric is 10 to avoid a collision with the protected tunnel default. During the approved cable interruption, the endpoint route selected the backup and the protected mission default remained installed. Reconnecting the cable selected the primary again. Keys and firewall policy were preserved. This tests cable-pull behavior, not Internet-only outage detection while Ethernet stays up. No new failover package or route-reset script is needed. Multi-WAN failover is not channel bonding. [S5](sources.md#s5-transport-management)
 
 ## Protection during recovery
 
@@ -47,15 +48,17 @@ Use a run ID and pseudonymous peer/session identifiers to correlate non-secret a
 
 ## Mission data and visibility
 
-The live input must be the selected MITRE CoT feed or an organizer-approved recording of that dataset. Access and handling instructions are still missing. The guide PDF is not traffic, and the repository's synthetic generator is not a substitute. Real feed tracks may be stationary; motion is not an acceptance condition.
+The operator explicitly approved synthetic CoT for the presentation. Label it fictional, not MITRE/MARFORPAC traffic. Actual MITRE access and handling instructions are still missing; its PDF is a reference guide, not a feed. Preserve live timestamps if authorized real input later becomes available.
 
-WinTAK's existing map is the application view. A cached icon does not prove new delivery. Correlate receiver arrival time, source event time and expiry with the map. A small laptop-only receiver-status display may help if needed, but none has been built. Do not add a new ESXi or server UI.
+WinTAK's existing map is the application view. The Windows-native CoT tool supplies console and JSONL receiver observations, not a map or health/PQC badge. Correlate arrivals, source times and expiry with WinTAK; a cached icon does not prove delivery. The tool uses raw XML TAK v0 over mTLS with operator-supplied client and trust PFX files. It does not install certificates in the OS certificate stores. Client-key import uses Windows user-key handling without requesting persistent storage; this is not an all-memory guarantee. A Windows mTLS probe succeeded without CoT payloads. Application receipt and CISEN PQ evidence remain separate checks. See the [tool procedure](demo.md#windows-cot-tool).
+
+The deployed Windows demo window has Start and Stop controls for its replay sender. WinTAK remains the map. The live WAN panel was omitted at the operator's request after a Windows SSH-client problem; do not imply the window shows current gateway routing or PQ status. Read-only route inspection is separate.
 
 The completed WILDTRACK recording is separate from this live topology. It does not establish live CoT interoperability or this path's recovery and security properties.
 
 ## Challenge coverage and limits
 
-The selected challenge calls for two edges, NIST-standard PQ key establishment, two transport types, unchanged IP mission applications, continuity or rapid recovery, reduced topology exposure, operator status and rapid deployment with dependencies disclosed. The evidence package must cover the live proof, architecture, connection time, delivered throughput and recovery measurements. These remain planned evidence, not measured results. [S1](sources.md#s1-event)
+The selected challenge calls for two edges, NIST-standard PQ key establishment, two transport types, unchanged IP mission applications, continuity or rapid recovery, reduced topology exposure, operator status and rapid deployment with dependencies disclosed. Synthetic-CoT cable-pull observations cover part of that evidence. Precise connection time, throughput, recovery, loss and deployed PQ evidence are not established. [S1](sources.md#s1-event)
 
 Report session continuity separately from automatic application recovery. Neither a restored route nor attempted sends prove delivery. Goodput measures received application data under the stated workload; it is not a link-capacity benchmark. Loss needs matchable event identifiers at sender and receiver.
 
