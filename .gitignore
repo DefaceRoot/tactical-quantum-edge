@@ -15,6 +15,11 @@
 !/tools/
 /tools/*
 !/tools/generate_dataset.py
+!/tools/TqeCot.cs
+!/tools/Invoke-TqeCot.ps1
+!/tools/Show-TqeDemo.ps1
+!/tools/Start-TqeDemo.cmd
+!/tools/tqe-route-status.sh
 
 # Private research, downloaded sources, credentials and measured results stay local.
 .local/
